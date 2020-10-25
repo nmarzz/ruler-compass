@@ -6,10 +6,13 @@ var dx = 5
 var dy =5
 
 // Shape functions
-class point {
-  constructor(x,y) {
+class Point {
+  constructor(x,y,theta=Math.random()*2*Math.PI) {
     this.x = x;
     this.y = y;
+    this.theta = theta
+    this.dx = Math.cos(theta)
+    this.dy = Math.sin(theta)
   }
 }
 function distance(a,b){
@@ -41,20 +44,65 @@ function triangle(points,context){
   compass(b,context,r=distance(b,c))
 }
 
+
+class PointController{
+  constructor(width,height,n) {
+    this.width = width;
+    this.height = height;
+    this.n = n
+  }
+
+  initPoints() {
+    var points = []
+    for (var i =0;i<this.n;i++){
+      x = Math.floor(Math.random() * this.width)
+      y = Math.floor(Math.random() * this.height)
+      points.push(new Point(x,y))
+    }
+    this.points = points
+  }
+
+  updatePoints() {
+    for (p of this.points){
+      if( p.x<0 || p.x>this.width) p.dx=-p.dx;
+      if( p.y<0 || p.y>this.height) p.dy=-p.dy;
+      p.x += p.dx
+      p.y += p.dy
+    }
+  }
+
+
+
+}
+
+
 // Initialize context
 function init() {
   context= myCanvas.getContext('2d');
+  pc = new PointController(1000,1000,3)
+  pc.initPoints()
+
+  for (p of pc.points){
+    console.log(p)
+  }
+  pc.updatePoints()
+  for (p of pc.points){
+    console.log(p)
+  }
   setInterval(draw, 10)
 }
 
 
+
 function draw()
 {
+
   context.clearRect(0, 0, 1000, 1000);
-  a = new point(248,263)
-  b = new point(528,396)
-  c= new point(x,y)
-  triangle([a,b,c],context);
+  a = new Point(248,263)
+  b = new Point(528,396)
+  c= new Point(x,y)
+  pc.updatePoints()
+  triangle(pc.points,context);
 
 
   // Boundary Logic
