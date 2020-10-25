@@ -1,10 +1,9 @@
 var context;
 // set height and width
-const x = 10
-const y = 200
-
-const dx = 5
-const dy =5
+var x = 10
+var y = 200
+var dx = 5
+var dy =5
 
 // Shape functions
 class point {
@@ -51,6 +50,7 @@ function init() {
 
 function draw()
 {
+  context.clearRect(0, 0, 1000, 1000);
   a = new point(248,263)
   b = new point(528,396)
   c= new point(x,y)
