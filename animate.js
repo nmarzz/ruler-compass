@@ -7,7 +7,7 @@ var dy =5
 
 // Shape functions
 class Point {
-  constructor(x,y,theta=Math.random()*2*Math.PI,speed = Math.random()*1.5 + 0.5) {
+  constructor(x,y,theta=Math.random()*2*Math.PI,speed = Math.random() + 0.5) {
     this.x = x;
     this.y = y;
     this.theta = theta
@@ -127,6 +127,12 @@ function getHulls(points){
   return hulls
 }
 // Shapes
+function line(points,context,cluster=-1){
+  a = points[0]
+  b = points[1]
+
+  edge(a,b,context,cluster)
+}
 function triangle(points,context,cluster=-1){
   a = points[0];
   b = points[1];
@@ -208,12 +214,10 @@ function pentagon(points,context,cluster=-1){
 function kmeans(points,k=3,iters = 5){
     var centers =[]
     init()
-
     for (var j=0;j<iters;j++){
         centers = getCenters(points)
         assignClusters()
     }
-
   function init(){
     for (p of points){
       if (p.cluster == -1){
@@ -235,14 +239,14 @@ function drawClusters(points,context){
   hulls = getHulls(points)
   for (h of hulls){
       cluster = h[0].cluster
-      if (h.length == 3){triangle(h,context,cluster)}
+      if (h.length == 2){line(h,context,cluster)}
       else if (h.length == 4){quadrilateral(h,context,cluster)}
       else if (h.length == 5){pentagon(h,context,cluster)}
+      else if (h.length == 3){triangle(h,context,cluster)}
   }
 
 
 }
-
 
 
 // Initialize context
@@ -251,21 +255,23 @@ function init() {
   context= myCanvas.getContext('2d');
   pc = new PointController(1400/ease_scale,756/ease_scale,8)
   pc.initPoints()
-
-  // myCanvas.addEventListener("mousemove", function(e) {
-  //   var cRect = myCanvas.getBoundingClientRect();
-  //   var canvasX = Math.round(e.clientX - cRect.left);
-  //   var canvasY = Math.round(e.clientY - cRect.top);
-  // })
   setInterval(draw, 10)
-}
 
+//   myCanvas.addEventListener("mousemove", function(e) {
+//     var cRect = myCanvas.getBoundingClientRect();        // Gets CSS pos, and width/height
+//     var canvasX = Math.round(e.clientX - cRect.left);  // Subtract the 'left' of the canvas
+//     var canvasY = Math.round(e.clientY - cRect.top);   // from the X/Y positions to make
+//     context.clearRect(0, 0, myCanvas.width, myCanvas.height);  // (0,0) the top left of the canvas
+//     context.fillText("X: "+canvasX+", Y: "+canvasY, 10, 20);
+// });
+}
 
 function draw()
 {
   context.clearRect(0, 0, 1400, 765);
+  kmeans(pc.points)
   plotpoints(pc.points,context)
   drawClusters(pc.points,context)
-  kmeans(pc.points)
   pc.updatePoints()
+
 }
