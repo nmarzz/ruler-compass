@@ -76,8 +76,6 @@ function hull(points) {
   }
 function plotpoints(points,context,size = 8){
   for (p of points){
-
-
     if (p.cluster == -1){context.fillStyle = "#000000"}
     else if (p.cluster == 0){context.fillStyle = "#BF14C7"}
     else if (p.cluster == 1){context.fillStyle = "#2193FF"}
@@ -114,6 +112,15 @@ function getCenters(points){
   return centers
 
 
+}
+function getClusters(points){
+  clusters = [[],[],[]]
+  for (p of points){clusters[p.cluster].push(p)}
+  return clusters
+}
+function getHulls(clusters){
+  hulls = clusters.map(hull)
+  return hulls
 }
 // Shapes
 function triangle(points,context){
@@ -224,6 +231,13 @@ function kmeans(points,k=3,iters = 5){
 
 
 
+function drawClusters(points,context){
+  clusters=getClusters(points)
+  hulls = getHulls(clusters)
+
+}
+
+
 
 
 
@@ -236,8 +250,11 @@ function init() {
   context= myCanvas.getContext('2d');
   pc = new PointController(1400/ease_scale,756/ease_scale,8)
   pc.initPoints()
+  kmeans(pc.points)
+  clus = getClusters(pc.points)
+  hulls = getHulls(clus)
 
-
+  
   setInterval(draw, 10)
 }
 
@@ -247,11 +264,6 @@ function draw()
 
   context.clearRect(0, 0, 1400, 765);
   kmeans(pc.points)
-  pc.updatePoints()
-  plotpoints(pc.points,context)
-  // pentagon(pc.points,context)
-  //quadrilateral(pc.points,context)
-  //triangle(pc.points,context)
 }
 
 
