@@ -14,7 +14,7 @@ class Point {
     this.speed = speed;
     this.dx = speed*Math.cos(theta)
     this.dy = speed*Math.sin(theta)
-    var cluster
+    this.cluster = -1
 
   }
 }
@@ -46,42 +46,9 @@ class PointController{
   }
 }
 
-
+// Accessories
 function distance(a,b){
   return Math.sqrt(Math.pow(a.x-b.x,2) + Math.pow(a.y-b.y,2) )
-}
-function edge(a,b,context){
-  context.beginPath();
-  context.moveTo(a.x, a.y);
-  context.lineTo(b.x, b.y);
-  context.stroke();
-}
-function compass(origin,context,r=20){
-  context.beginPath();
-  context.arc(origin.x, origin.y,r, 0, 2 * Math.PI);
-  context.stroke();
-}
-function plotpoints(points,context,size = 8){
-  for (p of points){
-    context.beginPath()
-    context.arc(p.x, p.y, size, 0, Math.PI * 2, true);
-    context.fill()
-  }
-
-}
-function triangle(points,context){
-  a = points[0];
-  b = points[1];
-  c = points[2];
-
-  edge(a,b,context)
-  edge(b,c,context)
-  edge(c,a,context)
-
-  // now draw compass ruler
-  compass(a,context,r=distance(a,b))
-  compass(a,context,r=distance(a,c))
-  compass(b,context,r=distance(b,c))
 }
 function hull(points) {
       points.sort(function (a, b) {
@@ -107,6 +74,62 @@ function hull(points) {
       var dot = (a.x - b.x) * (c.x - b.x) + (a.y - b.y) * (c.y - b.y);
       return cross < 0 || cross == 0 && dot <= 0;
   }
+function plotpoints(points,context,size = 8){
+  for (p of points){
+
+
+    if (p.cluster == -1){context.fillStyle = "#000000"}
+    else if (p.cluster == 0){context.fillStyle = "#BF14C7"}
+    else if (p.cluster == 1){context.fillStyle = "#2193FF"}
+    else if (p.cluster == 2){context.fillStyle = "#0AB93F"}
+
+
+    context.beginPath()
+    context.arc(p.x, p.y, size, 0, Math.PI * 2, true);
+    context.fill()
+  }
+
+}
+function edge(a,b,context){
+  context.beginPath();
+  context.moveTo(a.x, a.y);
+  context.lineTo(b.x, b.y);
+  context.stroke();
+}
+function compass(origin,context,r=20){
+  context.beginPath();
+  context.arc(origin.x, origin.y,r, 0, 2 * Math.PI);
+  context.stroke();
+}
+function getCenters(points){
+  pointsSeen = [0,0,0]
+  centers = [new Point(0,0),new Point(0,0),new Point(0,0)]
+
+  for (p of points){
+    i = p.cluster
+    pointsSeen[i] += 1
+    centers[i].x += (p.x - centers[i].x)/pointsSeen[i]
+    centers[i].y += (p.y - centers[i].y)/pointsSeen[i]
+  }
+  return centers
+
+
+}
+// Shapes
+function triangle(points,context){
+  a = points[0];
+  b = points[1];
+  c = points[2];
+
+  edge(a,b,context)
+  edge(b,c,context)
+  edge(c,a,context)
+
+  // now draw compass ruler
+  compass(a,context,r=distance(a,b))
+  compass(a,context,r=distance(a,c))
+  compass(b,context,r=distance(b,c))
+}
 function quadrilateral(points,context){
   a = points[0]
   b = points[1]
@@ -171,54 +194,37 @@ function pentagon(points,context){
 
 }
 
-
-
+// clustering
 function kmeans(points,k=3,iters = 5){
     var centers =[]
     init()
 
-    for (var i=0;i<iters;i++){
-        centers = getCenters()
+    for (var j=0;j<iters;j++){
+        centers = getCenters(points)
         assignClusters()
     }
 
-
-
-
-
-    // for (p in centers){
-    //   console.log(p)
-    // }
-
-
   function init(){
     for (p of points){
+      if (p.cluster == -1){
       idx = Math.floor(Math.random() * k)
       p.cluster = idx
     }
-  }
-  function getCenters(){
-    pointsSeen = [0,0,0]
-    centers = [new Point(0,0),new Point(0,0),new Point(0,0)]
 
-    for (p of points){
-      i = p.cluster
-      pointsSeen[i] += 1
-      centers[i].x += (p.x - centers[i].x)/pointsSeen[i]
-      centers[i].y += (p.y - centers[i].y)/pointsSeen[i]
-    }
-    return centers
-
-
-  }
+  }}
   function assignClusters(){
       for (p of points){
         dist = centers.map(c => Math.sqrt( Math.pow(c.x-p.x,2) + Math.pow(c.y-p.y,2)))
-        // p.cluster = dist.indexOf(Math.min(dist))
+        p.cluster = dist.indexOf(Math.min(...dist))
+
       }
 
   }
 }
+
+
+
+
 
 
 
@@ -230,26 +236,19 @@ function init() {
   context= myCanvas.getContext('2d');
   pc = new PointController(1400/ease_scale,756/ease_scale,8)
   pc.initPoints()
-  kmeans(pc.points)
-  //pc.points = hull(pc.points)
 
-  // while (pc.points.length != 5){
-  //   pc.initPoints()
-  //   pc.points = hull(pc.points)
-  // }
-  // o = 200
-  // l = 100
-  // pc.points = [new Point(o,o),new Point(o,l),new Point(l,l),new Point(l,o)]
 
   setInterval(draw, 10)
 }
+
+
 function draw()
 {
 
   context.clearRect(0, 0, 1400, 765);
-  //pc.updatePoints()
+  kmeans(pc.points)
+  pc.updatePoints()
   plotpoints(pc.points,context)
-
   // pentagon(pc.points,context)
   //quadrilateral(pc.points,context)
   //triangle(pc.points,context)
