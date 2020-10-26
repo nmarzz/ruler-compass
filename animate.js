@@ -7,7 +7,7 @@ var dy =5
 
 // Shape functions
 class Point {
-  constructor(x,y,theta=Math.random()*2*Math.PI,speed = Math.random()*2 + 1) {
+  constructor(x,y,theta=Math.random()*2*Math.PI,speed = Math.random()*1.5 + 0.5) {
     this.x = x;
     this.y = y;
     this.theta = theta
@@ -74,28 +74,31 @@ function hull(points) {
       var dot = (a.x - b.x) * (c.x - b.x) + (a.y - b.y) * (c.y - b.y);
       return cross < 0 || cross == 0 && dot <= 0;
   }
+function colorOf(cluster_num){
+  if (cluster_num == -1){return "#000000"}
+  else if (cluster_num == 0){return "#BF14C7"}
+  else if (cluster_num == 1){return  "#2193FF"}
+  else if (cluster_num == 2){return "#0AB93F"}
+}
 function plotpoints(points,context,size = 8){
   for (p of points){
-    if (p.cluster == -1){context.fillStyle = "#000000"}
-    else if (p.cluster == 0){context.fillStyle = "#BF14C7"}
-    else if (p.cluster == 1){context.fillStyle = "#2193FF"}
-    else if (p.cluster == 2){context.fillStyle = "#0AB93F"}
-
-
+    context.fillStyle = colorOf(p.cluster)
     context.beginPath()
     context.arc(p.x, p.y, size, 0, Math.PI * 2, true);
     context.fill()
   }
 
 }
-function edge(a,b,context){
+function edge(a,b,context,cluster = -1){
   context.beginPath();
+  context.strokeStyle = colorOf(cluster)
   context.moveTo(a.x, a.y);
   context.lineTo(b.x, b.y);
   context.stroke();
 }
-function compass(origin,context,r=20){
+function compass(origin,context,r=20,cluster = -1){
   context.beginPath();
+  context.strokeStyle = colorOf(cluster)
   context.arc(origin.x, origin.y,r, 0, 2 * Math.PI);
   context.stroke();
 }
@@ -118,26 +121,27 @@ function getClusters(points){
   for (p of points){clusters[p.cluster].push(p)}
   return clusters
 }
-function getHulls(clusters){
+function getHulls(points){
+  clusters = getClusters(points)
   hulls = clusters.map(hull)
   return hulls
 }
 // Shapes
-function triangle(points,context){
+function triangle(points,context,cluster=-1){
   a = points[0];
   b = points[1];
   c = points[2];
 
-  edge(a,b,context)
-  edge(b,c,context)
-  edge(c,a,context)
+  edge(a,b,context,cluster)
+  edge(b,c,context,cluster)
+  edge(c,a,context,cluster)
 
   // now draw compass ruler
-  compass(a,context,r=distance(a,b))
-  compass(a,context,r=distance(a,c))
-  compass(b,context,r=distance(b,c))
+  compass(a,context,r=distance(a,b),cluster)
+  compass(a,context,r=distance(a,c),cluster)
+  compass(b,context,r=distance(b,c),cluster)
 }
-function quadrilateral(points,context){
+function quadrilateral(points,context,cluster = -1){
   a = points[0]
   b = points[1]
   c = points[2]
@@ -150,20 +154,19 @@ function quadrilateral(points,context){
   diag = distance(a,c)
 
   // construct the quadrilateral
-  edge(a,b,context)
-  edge(b,c,context)
-  edge(c,d,context)
-  edge(d,a,context)
-  edge(a,c,context)
+  edge(a,b,context,cluster)
+  edge(b,c,context,cluster)
+  edge(c,d,context,cluster)
+  edge(d,a,context,cluster)
 
-  compass(a,context,diag)
-  compass(a,context,da)
-  compass(c,context,cd)
-  compass(a,context,ab)
-  compass(c,context,bc)
+  compass(a,context,diag,cluster)
+  compass(a,context,da,cluster)
+  compass(c,context,cd,cluster)
+  compass(a,context,ab,cluster)
+  compass(c,context,bc,cluster)
 
 }
-function pentagon(points,context){
+function pentagon(points,context,cluster=-1){
   a = points[0]
   b = points[1]
   c = points[2]
@@ -183,19 +186,19 @@ function pentagon(points,context){
   bd  = distance(b,d)
 
   // Draw the polygon
-  edge(a,b,context)
-  edge(b,c,context)
-  edge(c,d,context)
-  edge(d,e,context)
-  edge(e,a,context)
+  edge(a,b,context,cluster)
+  edge(b,c,context,cluster)
+  edge(c,d,context,cluster)
+  edge(d,e,context,cluster)
+  edge(e,a,context,cluster)
 
-  compass(a,context,ea)
-  compass(a,context,ad)
-  compass(a,context,ac)
+  compass(a,context,ea,cluster)
+  compass(a,context,ad,cluster)
+  compass(a,context,ac,cluster)
 
-  compass(b,context,be)
-  compass(b,context,bd)
-  compass(b,context,bc)
+  compass(b,context,be,cluster)
+  compass(b,context,bd,cluster)
+  compass(b,context,bc,cluster)
 
 
 
@@ -228,19 +231,17 @@ function kmeans(points,k=3,iters = 5){
 
   }
 }
-
-
-
 function drawClusters(points,context){
-  clusters=getClusters(points)
-  hulls = getHulls(clusters)
+  hulls = getHulls(points)
+  for (h of hulls){
+      cluster = h[0].cluster
+      if (h.length == 3){triangle(h,context,cluster)}
+      else if (h.length == 4){quadrilateral(h,context,cluster)}
+      else if (h.length == 5){pentagon(h,context,cluster)}
+  }
+
 
 }
-
-
-
-
-
 
 
 
@@ -250,30 +251,21 @@ function init() {
   context= myCanvas.getContext('2d');
   pc = new PointController(1400/ease_scale,756/ease_scale,8)
   pc.initPoints()
-  kmeans(pc.points)
-  clus = getClusters(pc.points)
-  hulls = getHulls(clus)
 
-  
+  // myCanvas.addEventListener("mousemove", function(e) {
+  //   var cRect = myCanvas.getBoundingClientRect();
+  //   var canvasX = Math.round(e.clientX - cRect.left);
+  //   var canvasY = Math.round(e.clientY - cRect.top);
+  // })
   setInterval(draw, 10)
 }
 
 
 function draw()
 {
-
   context.clearRect(0, 0, 1400, 765);
+  plotpoints(pc.points,context)
+  drawClusters(pc.points,context)
   kmeans(pc.points)
+  pc.updatePoints()
 }
-
-
-
-
-
-// context.clearRect(0,0, 300,300);
-// context.beginPath();
-// context.fillStyle="#0000ff";
-// // Draws a circle of radius 20 at the coordinates 100,100 on the canvas
-// context.arc(x,y,20,0,Math.PI*2,true);
-// context.closePath();
-// context.fill();
