@@ -1,13 +1,9 @@
 var context;
 // set height and width
-var x = 10
-var y = 200
-var dx = 5
-var dy =5
 
 // Shape functions
 class Point {
-  constructor(x,y,theta=Math.random()*2*Math.PI,speed = Math.random() + 0.5) {
+  constructor(x,y,theta=Math.random()*2*Math.PI,speed = Math.random()*0.6 + 0.2) {
     this.x = x;
     this.y = y;
     this.theta = theta
@@ -26,6 +22,7 @@ class PointController{
   }
 
   initPoints() {
+    var x,y
     var points = []
     for (var i =0;i<this.n;i++){
       x = Math.floor(Math.random() * this.width)
@@ -209,6 +206,37 @@ function pentagon(points,context,cluster=-1){
 
 
 }
+function hexagon(points,context,cluster=-1){
+  a = points[0]
+  b = points[1]
+  c = points[2]
+  d = points[3]
+  e = points[4]
+  f = points[5]
+
+  ab = edge(a,b,context,cluster)
+  bc = edge(b,c,context,cluster)
+  cd = edge(c,d,context,cluster)
+  de = edge(d,e,context,cluster)
+  ef = edge(e,f,context,cluster)
+  fa = edge(f,a,context,cluster)
+
+  ac = distance(a,c)
+  ad = distance(a,d)
+  ae = distance(a,e)
+
+  fb = distance(f,b)
+  fc = distance(f,c)
+  fd = distance(f,d)
+
+  compass(a,context,ac,cluster)
+  compass(a,context,ad,cluster)
+  compass(a,context,ae,cluster)
+
+  compass(f,context,fb,cluster)
+  compass(f,context,fb,cluster)
+  compass(f,context,fd,cluster)
+}
 
 // clustering
 function kmeans(points,k=3,iters = 5){
@@ -238,11 +266,14 @@ function kmeans(points,k=3,iters = 5){
 function drawClusters(points,context){
   hulls = getHulls(points)
   for (h of hulls){
+    if (typeof h[0] != "undefined"){
       cluster = h[0].cluster
       if (h.length == 2){line(h,context,cluster)}
       else if (h.length == 4){quadrilateral(h,context,cluster)}
       else if (h.length == 5){pentagon(h,context,cluster)}
+      else if (h.length == 6){hexagon(h,context,cluster)}
       else if (h.length == 3){triangle(h,context,cluster)}
+    }
   }
 
 
@@ -253,7 +284,7 @@ function drawClusters(points,context){
 function init() {
   ease_scale = 1
   context= myCanvas.getContext('2d');
-  pc = new PointController(1400/ease_scale,756/ease_scale,8)
+  pc = new PointController(1400/ease_scale,756/ease_scale,12)
   pc.initPoints()
   setInterval(draw, 10)
 
@@ -268,7 +299,7 @@ function init() {
 
 function draw()
 {
-  context.clearRect(0, 0, 1400, 765);
+  context.clearRect(0, 0, myCanvas.width, myCanvas.height)
   kmeans(pc.points)
   plotpoints(pc.points,context)
   drawClusters(pc.points,context)
